@@ -41,3 +41,41 @@ CREATE TABLE asignaciones_celdas (
   CONSTRAINT fk_asignaciones_estado FOREIGN KEY (estado_id)
     REFERENCES estados(id)
 ) ENGINE=InnoDB;
+
+CREATE TABLE transacciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  finca_id INT NULL,
+  tipo ENUM('gasto', 'ingreso') NOT NULL,
+  concepto VARCHAR(255) NOT NULL,
+  categoria VARCHAR(100) NULL,
+  importe DECIMAL(10, 2) NOT NULL,
+  fecha DATE NOT NULL,
+  observaciones TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_transacciones_finca FOREIGN KEY (finca_id)
+    REFERENCES fincas(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- Catalogo de tipos de abono (nombre + color), analogo a "estados".
+CREATE TABLE tipos_abono (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(150) NOT NULL,
+  color_hexadecimal VARCHAR(7) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE planes_abonado (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  finca_id INT NOT NULL,
+  temporada_anio INT NOT NULL,
+  mes TINYINT NOT NULL,
+  tipo_abono_id INT NOT NULL,
+  cantidad_dosis VARCHAR(100) NULL,
+  fecha_inicio_temporada DATE NULL,
+  fecha_fin_temporada DATE NULL,
+  observaciones TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_planes_abonado_finca FOREIGN KEY (finca_id)
+    REFERENCES fincas(id) ON DELETE CASCADE,
+  CONSTRAINT fk_planes_abonado_tipo FOREIGN KEY (tipo_abono_id)
+    REFERENCES tipos_abono(id)
+) ENGINE=InnoDB;

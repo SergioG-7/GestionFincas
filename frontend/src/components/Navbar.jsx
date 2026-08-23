@@ -6,6 +6,8 @@ const links = [
   { to: '/fincas', label: 'Fincas' },
   { to: '/estados', label: 'Estados' },
   { to: '/historico', label: 'Historico' },
+  { to: '/contabilidad', label: 'Contabilidad' },
+  { to: '/plan-abonado', label: 'Plan Abonado' },
 ];
 
 export default function Navbar() {
