@@ -51,17 +51,25 @@ async function updateEstado(req, res) {
 }
 
 async function deleteEstado(req, res) {
+  const conn = await pool.getConnection();
   try {
-    const [result] = await pool.query('DELETE FROM estados WHERE id = ?', [req.params.id]);
+    await conn.beginTransaction();
+
+    await conn.query('DELETE FROM asignaciones_celdas WHERE estado_id = ?', [req.params.id]);
+
+    const [result] = await conn.query('DELETE FROM estados WHERE id = ?', [req.params.id]);
     if (result.affectedRows === 0) {
+      await conn.rollback();
       return res.status(404).json({ message: 'Estado no encontrado' });
     }
+
+    await conn.commit();
     res.status(204).send();
   } catch (err) {
-    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-      return res.status(409).json({ message: 'No se puede eliminar: el estado tiene asignaciones asociadas' });
-    }
+    await conn.rollback();
     res.status(500).json({ message: err.message });
+  } finally {
+    conn.release();
   }
 }
 

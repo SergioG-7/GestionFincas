@@ -55,11 +55,16 @@ export default function EstadosPage() {
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(estado) {
+    const confirmado = window.confirm(
+      `¿Eliminar el estado "${estado.nombre}"? Se borraran tambien todas las asignaciones asociadas a este estado, incluido su historico.`
+    );
+    if (!confirmado) return;
+
     setError('');
     try {
-      await api.delete(`/estados/${id}`);
-      if (editandoId === id) cancelarEdicion();
+      await api.delete(`/estados/${estado.id}`);
+      if (editandoId === estado.id) cancelarEdicion();
       cargarEstados();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al eliminar el estado.');
@@ -150,7 +155,7 @@ export default function EstadosPage() {
                     <Pencil size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(estado.id)}
+                    onClick={() => handleDelete(estado)}
                     className="text-red-600 hover:text-red-800"
                     title="Eliminar"
                   >

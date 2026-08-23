@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import AsignacionModal from './AsignacionModal';
 
 const BORDE_AUTOSCROLL = 50; // px desde el borde del contenedor para activar el auto-scroll
@@ -176,6 +176,10 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
     velocidadScrollRef.current = { x: 0, y: 0 };
   }
 
+  function desplazar(dx, dy) {
+    contenedorRef.current?.scrollBy({ left: dx, top: dy, behavior: 'smooth' });
+  }
+
   const mapa = {};
   asignaciones.forEach((a) => {
     const key = `${a.fila}-${a.columna}`;
@@ -233,7 +237,7 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
         ref={contenedorRef}
         onMouseMove={handleMouseMoveContenedor}
         onMouseLeave={handleMouseLeaveContenedor}
-        className={`overflow-auto max-h-[70vh] rounded ${
+        className={`grid-scroll overflow-auto max-h-[70vh] rounded ${
           modoEdicion ? 'border border-gray-200' : 'border-2 border-dashed border-amber-300'
         }`}
       >
@@ -294,6 +298,41 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
             </Fragment>
           ))}
         </div>
+      </div>
+
+      <div className="flex sm:hidden items-center justify-end gap-1">
+        <button
+          type="button"
+          onClick={() => desplazar(0, -150)}
+          className="p-2 rounded bg-gray-100 text-gray-700 active:bg-gray-200"
+          aria-label="Subir"
+        >
+          <ChevronUp size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => desplazar(0, 150)}
+          className="p-2 rounded bg-gray-100 text-gray-700 active:bg-gray-200"
+          aria-label="Bajar"
+        >
+          <ChevronDown size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => desplazar(-150, 0)}
+          className="p-2 rounded bg-gray-100 text-gray-700 active:bg-gray-200"
+          aria-label="Izquierda"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => desplazar(150, 0)}
+          className="p-2 rounded bg-gray-100 text-gray-700 active:bg-gray-200"
+          aria-label="Derecha"
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
 
       {mostrarModal && (
