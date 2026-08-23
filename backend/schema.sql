@@ -63,6 +63,8 @@ CREATE TABLE tipos_abono (
   color_hexadecimal VARCHAR(7) NOT NULL
 ) ENGINE=InnoDB;
 
+-- fecha_inicio_temporada/fecha_fin_temporada quedan sin usar por la app: el rango de
+-- temporada se gestiona en la tabla dedicada "temporadas_fincas" (ver mas abajo).
 CREATE TABLE planes_abonado (
   id INT AUTO_INCREMENT PRIMARY KEY,
   finca_id INT NOT NULL,
@@ -78,4 +80,17 @@ CREATE TABLE planes_abonado (
     REFERENCES fincas(id) ON DELETE CASCADE,
   CONSTRAINT fk_planes_abonado_tipo FOREIGN KEY (tipo_abono_id)
     REFERENCES tipos_abono(id)
+) ENGINE=InnoDB;
+
+-- Rango de fechas de la temporada de abonado por finca y anio, independiente
+-- de si hay algun mes con abono asignado.
+CREATE TABLE temporadas_fincas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  finca_id INT NOT NULL,
+  anio INT NOT NULL,
+  fecha_inicio DATE NULL,
+  fecha_fin DATE NULL,
+  UNIQUE KEY uk_finca_anio (finca_id, anio),
+  CONSTRAINT fk_temporadas_finca FOREIGN KEY (finca_id)
+    REFERENCES fincas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

@@ -23,16 +23,7 @@ async function getAbonado(req, res) {
 }
 
 async function upsertAbonado(req, res) {
-  const {
-    finca_id,
-    temporada_anio,
-    mes,
-    tipo_abono_id,
-    cantidad_dosis,
-    fecha_inicio_temporada,
-    fecha_fin_temporada,
-    observaciones,
-  } = req.body;
+  const { finca_id, temporada_anio, mes, tipo_abono_id, cantidad_dosis, observaciones } = req.body;
 
   if (!finca_id || !temporada_anio || !mes || !tipo_abono_id) {
     return res.status(400).json({ message: 'finca_id, temporada_anio, mes y tipo_abono_id son obligatorios' });
@@ -48,27 +39,15 @@ async function upsertAbonado(req, res) {
     let id;
     if (existente) {
       await pool.query(
-        `UPDATE planes_abonado
-         SET cantidad_dosis = ?, fecha_inicio_temporada = ?, fecha_fin_temporada = ?, observaciones = ?
-         WHERE id = ?`,
-        [cantidad_dosis || null, fecha_inicio_temporada || null, fecha_fin_temporada || null, observaciones || null, existente.id]
+        'UPDATE planes_abonado SET cantidad_dosis = ?, observaciones = ? WHERE id = ?',
+        [cantidad_dosis || null, observaciones || null, existente.id]
       );
       id = existente.id;
     } else {
       const [result] = await pool.query(
-        `INSERT INTO planes_abonado
-          (finca_id, temporada_anio, mes, tipo_abono_id, cantidad_dosis, fecha_inicio_temporada, fecha_fin_temporada, observaciones)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          finca_id,
-          temporada_anio,
-          mes,
-          tipo_abono_id,
-          cantidad_dosis || null,
-          fecha_inicio_temporada || null,
-          fecha_fin_temporada || null,
-          observaciones || null,
-        ]
+        `INSERT INTO planes_abonado (finca_id, temporada_anio, mes, tipo_abono_id, cantidad_dosis, observaciones)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [finca_id, temporada_anio, mes, tipo_abono_id, cantidad_dosis || null, observaciones || null]
       );
       id = result.insertId;
     }
@@ -97,23 +76,42 @@ async function deleteAbonado(req, res) {
   }
 }
 
-async function updateTemporada(req, res) {
-  const { finca_id, temporada_anio, fecha_inicio_temporada, fecha_fin_temporada } = req.body;
+async function getTemporada(req, res) {
+  const { finca_id, anio } = req.query;
 
-  if (!finca_id || !temporada_anio) {
-    return res.status(400).json({ message: 'finca_id y temporada_anio son obligatorios' });
+  if (!finca_id || !anio) {
+    return res.status(400).json({ message: 'finca_id y anio son obligatorios' });
   }
 
   try {
-    await pool.query(
-      `UPDATE planes_abonado SET fecha_inicio_temporada = ?, fecha_fin_temporada = ?
-       WHERE finca_id = ? AND temporada_anio = ?`,
-      [fecha_inicio_temporada || null, fecha_fin_temporada || null, finca_id, temporada_anio]
+    const [[temporada]] = await pool.query(
+      'SELECT fecha_inicio, fecha_fin FROM temporadas_fincas WHERE finca_id = ? AND anio = ?',
+      [finca_id, anio]
     );
-    res.json({ ok: true });
+    res.json(temporada || { fecha_inicio: null, fecha_fin: null });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 }
 
-module.exports = { getAbonado, upsertAbonado, deleteAbonado, updateTemporada };
+async function upsertTemporada(req, res) {
+  const { finca_id, anio, fecha_inicio, fecha_fin } = req.body;
+
+  if (!finca_id || !anio) {
+    return res.status(400).json({ message: 'finca_id y anio son obligatorios' });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO temporadas_fincas (finca_id, anio, fecha_inicio, fecha_fin)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE fecha_inicio = VALUES(fecha_inicio), fecha_fin = VALUES(fecha_fin)`,
+      [finca_id, anio, fecha_inicio || null, fecha_fin || null]
+    );
+    res.json({ fecha_inicio: fecha_inicio || null, fecha_fin: fecha_fin || null });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+module.exports = { getAbonado, upsertAbonado, deleteAbonado, getTemporada, upsertTemporada };

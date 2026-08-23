@@ -40,29 +40,43 @@ export default function PlanAbonadoPage() {
     setError('');
     api
       .get('/abonado', { params: { finca_id: fincaId, anio } })
-      .then(({ data }) => {
-        setRegistros(data);
-        setFechaInicio(data[0]?.fecha_inicio_temporada?.slice(0, 10) || '');
-        setFechaFin(data[0]?.fecha_fin_temporada?.slice(0, 10) || '');
-      })
+      .then(({ data }) => setRegistros(data))
       .catch(() => setError('No se pudo cargar el plan de abonado. Comprueba tu conexion e intenta de nuevo.'))
       .finally(() => setLoading(false));
+  }, [fincaId, anio]);
+
+  const cargarTemporada = useCallback(() => {
+    if (!fincaId || !anio) {
+      setFechaInicio('');
+      setFechaFin('');
+      return;
+    }
+    api
+      .get('/abonado/temporada', { params: { finca_id: fincaId, anio } })
+      .then(({ data }) => {
+        setFechaInicio(data.fecha_inicio?.slice(0, 10) || '');
+        setFechaFin(data.fecha_fin?.slice(0, 10) || '');
+      })
+      .catch(() => {});
   }, [fincaId, anio]);
 
   useEffect(() => {
     cargarRegistros();
   }, [cargarRegistros]);
 
+  useEffect(() => {
+    cargarTemporada();
+  }, [cargarTemporada]);
+
   async function handleGuardarTemporada() {
     setGuardandoTemporada(true);
     try {
-      await api.put('/abonado/temporada', {
+      await api.post('/abonado/temporada', {
         finca_id: fincaId,
-        temporada_anio: anio,
-        fecha_inicio_temporada: fechaInicio || null,
-        fecha_fin_temporada: fechaFin || null,
+        anio,
+        fecha_inicio: fechaInicio || null,
+        fecha_fin: fechaFin || null,
       });
-      cargarRegistros();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al guardar el rango de temporada.');
     } finally {
@@ -140,8 +154,7 @@ export default function PlanAbonadoPage() {
             <button
               type="button"
               onClick={handleGuardarTemporada}
-              disabled={guardandoTemporada || registros.length === 0}
-              title={registros.length === 0 ? 'Asigna primero un abono a algun mes para poder guardar el rango' : ''}
+              disabled={guardandoTemporada}
               className="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-800 disabled:opacity-50"
             >
               {guardandoTemporada ? 'Guardando...' : 'Guardar rango'}
