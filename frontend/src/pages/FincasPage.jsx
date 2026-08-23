@@ -27,7 +27,7 @@ export default function FincasPage() {
       <FincaForm onFincaCreada={cargarFincas} />
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Fincas registradas</h2>
-        <FincasList fincas={fincas} loading={loading} />
+        <FincasList fincas={fincas} loading={loading} onCambio={cargarFincas} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import api from '../api/axios';
 
 export default function EstadosPage() {
@@ -8,6 +8,7 @@ export default function EstadosPage() {
   const [nombre, setNombre] = useState('');
   const [color, setColor] = useState('#22c55e');
   const [error, setError] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
   async function cargarEstados() {
     setLoading(true);
@@ -23,13 +24,28 @@ export default function EstadosPage() {
     cargarEstados();
   }, []);
 
+  function cancelarEdicion() {
+    setEditandoId(null);
+    setNombre('');
+    setColor('#22c55e');
+  }
+
+  function handleEditar(estado) {
+    setEditandoId(estado.id);
+    setNombre(estado.nombre);
+    setColor(estado.color_hexadecimal);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/estados', { nombre, color_hexadecimal: color });
-      setNombre('');
-      setColor('#22c55e');
+      if (editandoId) {
+        await api.put(`/estados/${editandoId}`, { nombre, color_hexadecimal: color });
+      } else {
+        await api.post('/estados', { nombre, color_hexadecimal: color });
+      }
+      cancelarEdicion();
       cargarEstados();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al guardar el estado.');
@@ -40,6 +56,7 @@ export default function EstadosPage() {
     setError('');
     try {
       await api.delete(`/estados/${id}`);
+      if (editandoId === id) cancelarEdicion();
       cargarEstados();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al eliminar el estado.');
@@ -75,8 +92,18 @@ export default function EstadosPage() {
           className="inline-flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
         >
           <Plus size={18} />
-          Guardar estado
+          {editandoId ? 'Actualizar estado' : 'Guardar estado'}
         </button>
+        {editandoId && (
+          <button
+            type="button"
+            onClick={cancelarEdicion}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <X size={18} />
+            Cancelar
+          </button>
+        )}
       </form>
 
       {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -92,7 +119,9 @@ export default function EstadosPage() {
             {estados.map((estado) => (
               <li
                 key={estado.id}
-                className="flex items-center justify-between bg-white rounded-lg shadow px-4 py-3"
+                className={`flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 ${
+                  editandoId === estado.id ? 'ring-2 ring-green-600' : ''
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <span
@@ -102,13 +131,22 @@ export default function EstadosPage() {
                   <span className="text-gray-800">{estado.nombre}</span>
                   <span className="text-xs text-gray-400">{estado.color_hexadecimal}</span>
                 </div>
-                <button
-                  onClick={() => handleDelete(estado.id)}
-                  className="text-red-600 hover:text-red-800"
-                  title="Eliminar"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleEditar(estado)}
+                    className="text-gray-500 hover:text-gray-800"
+                    title="Editar"
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(estado.id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Eliminar"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

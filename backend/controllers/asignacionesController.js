@@ -24,22 +24,38 @@ async function createAsignacion(req, res) {
   }
 
   try {
-    const [result] = await pool.query(
-      `INSERT INTO asignaciones_celdas
-        (parcela_id, fila, columna, estado_id, observaciones, fecha_asignacion, activo_en_celda)
-       VALUES (?, ?, ?, ?, ?, CURDATE(), 1)`,
-      [parcela_id, fila, columna, estado_id, observaciones || null]
+    const [[existente]] = await pool.query(
+      `SELECT id FROM asignaciones_celdas
+       WHERE parcela_id = ? AND fila = ? AND columna = ? AND estado_id = ? AND activo_en_celda = 1`,
+      [parcela_id, fila, columna, estado_id]
     );
+
+    let asignacionId;
+    if (existente) {
+      await pool.query(
+        'UPDATE asignaciones_celdas SET observaciones = ?, fecha_asignacion = CURDATE() WHERE id = ?',
+        [observaciones || null, existente.id]
+      );
+      asignacionId = existente.id;
+    } else {
+      const [result] = await pool.query(
+        `INSERT INTO asignaciones_celdas
+          (parcela_id, fila, columna, estado_id, observaciones, fecha_asignacion, activo_en_celda)
+         VALUES (?, ?, ?, ?, ?, CURDATE(), 1)`,
+        [parcela_id, fila, columna, estado_id, observaciones || null]
+      );
+      asignacionId = result.insertId;
+    }
 
     const [[asignacion]] = await pool.query(
       `SELECT ac.*, e.nombre AS estado_nombre, e.color_hexadecimal
        FROM asignaciones_celdas ac
        JOIN estados e ON e.id = ac.estado_id
        WHERE ac.id = ?`,
-      [result.insertId]
+      [asignacionId]
     );
 
-    res.status(201).json(asignacion);
+    res.status(existente ? 200 : 201).json(asignacion);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -57,12 +73,25 @@ async function createAsignacionesLote(req, res) {
     await conn.beginTransaction();
 
     for (const celda of celdas) {
-      await conn.query(
-        `INSERT INTO asignaciones_celdas
-          (parcela_id, fila, columna, estado_id, observaciones, fecha_asignacion, activo_en_celda)
-         VALUES (?, ?, ?, ?, ?, CURDATE(), 1)`,
-        [parcela_id, celda.fila, celda.columna, estado_id, observaciones || null]
+      const [[existente]] = await conn.query(
+        `SELECT id FROM asignaciones_celdas
+         WHERE parcela_id = ? AND fila = ? AND columna = ? AND estado_id = ? AND activo_en_celda = 1`,
+        [parcela_id, celda.fila, celda.columna, estado_id]
       );
+
+      if (existente) {
+        await conn.query(
+          'UPDATE asignaciones_celdas SET observaciones = ?, fecha_asignacion = CURDATE() WHERE id = ?',
+          [observaciones || null, existente.id]
+        );
+      } else {
+        await conn.query(
+          `INSERT INTO asignaciones_celdas
+            (parcela_id, fila, columna, estado_id, observaciones, fecha_asignacion, activo_en_celda)
+           VALUES (?, ?, ?, ?, ?, CURDATE(), 1)`,
+          [parcela_id, celda.fila, celda.columna, estado_id, observaciones || null]
+        );
+      }
     }
 
     await conn.commit();
@@ -82,6 +111,70 @@ async function createAsignacionesLote(req, res) {
     res.status(500).json({ message: err.message });
   } finally {
     conn.release();
+  }
+}
+
+async function limpiarAsignacionesLote(req, res) {
+  const { parcela_id, celdas } = req.body;
+
+  if (!parcela_id || !Array.isArray(celdas) || celdas.length === 0) {
+    return res.status(400).json({ message: 'parcela_id y al menos una celda son obligatorios' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    for (const celda of celdas) {
+      await conn.query(
+        `UPDATE asignaciones_celdas
+         SET activo_en_celda = 0
+         WHERE parcela_id = ? AND fila = ? AND columna = ? AND activo_en_celda = 1`,
+        [parcela_id, celda.fila, celda.columna]
+      );
+    }
+
+    await conn.commit();
+
+    const [asignaciones] = await pool.query(
+      `SELECT ac.*, e.nombre AS estado_nombre, e.color_hexadecimal
+       FROM asignaciones_celdas ac
+       JOIN estados e ON e.id = ac.estado_id
+       WHERE ac.parcela_id = ? AND ac.activo_en_celda = 1
+       ORDER BY ac.fecha_asignacion ASC, ac.id ASC`,
+      [parcela_id]
+    );
+
+    res.json(asignaciones);
+  } catch (err) {
+    await conn.rollback();
+    res.status(500).json({ message: err.message });
+  } finally {
+    conn.release();
+  }
+}
+
+async function updateAsignacion(req, res) {
+  const { observaciones } = req.body;
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE asignaciones_celdas SET observaciones = ? WHERE id = ?',
+      [observaciones || null, req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Asignacion no encontrada' });
+    }
+    const [[asignacion]] = await pool.query(
+      `SELECT ac.*, e.nombre AS estado_nombre, e.color_hexadecimal
+       FROM asignaciones_celdas ac
+       JOIN estados e ON e.id = ac.estado_id
+       WHERE ac.id = ?`,
+      [req.params.id]
+    );
+    res.json(asignacion);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 }
 
@@ -153,6 +246,8 @@ module.exports = {
   getAsignacionesPorParcela,
   createAsignacion,
   createAsignacionesLote,
+  limpiarAsignacionesLote,
+  updateAsignacion,
   desactivarAsignacion,
   getHistorico,
 };

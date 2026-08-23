@@ -54,4 +54,38 @@ async function createFinca(req, res) {
   }
 }
 
-module.exports = { getFincas, createFinca };
+async function updateFinca(req, res) {
+  const { nombre, localidad } = req.body;
+
+  if (!nombre) {
+    return res.status(400).json({ message: 'nombre es obligatorio' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE fincas SET nombre = ?, localidad = ? WHERE id = ?',
+      [nombre, localidad || null, req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Finca no encontrada' });
+    }
+    const [[finca]] = await pool.query('SELECT * FROM fincas WHERE id = ?', [req.params.id]);
+    res.json(finca);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+async function deleteFinca(req, res) {
+  try {
+    const [result] = await pool.query('DELETE FROM fincas WHERE id = ?', [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Finca no encontrada' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+module.exports = { getFincas, createFinca, updateFinca, deleteFinca };

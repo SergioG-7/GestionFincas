@@ -1,6 +1,9 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Lock } from 'lucide-react';
 import AsignacionModal from './AsignacionModal';
+
+const BORDE_AUTOSCROLL = 50; // px desde el borde del contenedor para activar el auto-scroll
+const VELOCIDAD_AUTOSCROLL = 12; // px por frame
 
 function construirTooltip(fila, columna, celdaAsignaciones) {
   const lineas = [`Fila ${fila + 1}, Columna ${columna + 1}`];
@@ -60,6 +63,8 @@ function calcularEstiloCelda(celdaAsignaciones, estadoFiltroId, seleccionada) {
 export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFiltroId, modoEdicion, onCambio }) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedCells, setSelectedCells] = useState([]);
+  const contenedorRef = useRef(null);
+  const velocidadScrollRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     if (!isDragging) return;
@@ -69,6 +74,52 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
     window.addEventListener('mouseup', handleWindowMouseUp);
     return () => window.removeEventListener('mouseup', handleWindowMouseUp);
   }, [isDragging]);
+
+  useEffect(() => {
+    if (!isDragging) {
+      velocidadScrollRef.current = { x: 0, y: 0 };
+      return;
+    }
+
+    let frameId;
+    function tick() {
+      const contenedor = contenedorRef.current;
+      const { x, y } = velocidadScrollRef.current;
+      if (contenedor && (x !== 0 || y !== 0)) {
+        contenedor.scrollLeft += x;
+        contenedor.scrollTop += y;
+      }
+      frameId = requestAnimationFrame(tick);
+    }
+    frameId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      velocidadScrollRef.current = { x: 0, y: 0 };
+    };
+  }, [isDragging]);
+
+  function calcularVelocidadEje(posicion, inicio, fin) {
+    if (posicion - inicio < BORDE_AUTOSCROLL) return -VELOCIDAD_AUTOSCROLL;
+    if (fin - posicion < BORDE_AUTOSCROLL) return VELOCIDAD_AUTOSCROLL;
+    return 0;
+  }
+
+  function handleMouseMoveContenedor(e) {
+    if (!isDragging) return;
+    const contenedor = contenedorRef.current;
+    if (!contenedor) return;
+    const rect = contenedor.getBoundingClientRect();
+
+    velocidadScrollRef.current = {
+      x: calcularVelocidadEje(e.clientX, rect.left, rect.right),
+      y: calcularVelocidadEje(e.clientY, rect.top, rect.bottom),
+    };
+  }
+
+  function handleMouseLeaveContenedor() {
+    velocidadScrollRef.current = { x: 0, y: 0 };
+  }
 
   const mapa = {};
   asignaciones.forEach((a) => {
@@ -124,6 +175,9 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
       )}
 
       <div
+        ref={contenedorRef}
+        onMouseMove={handleMouseMoveContenedor}
+        onMouseLeave={handleMouseLeaveContenedor}
         className={`overflow-auto max-h-[70vh] rounded ${
           modoEdicion ? 'border border-gray-200' : 'border-2 border-dashed border-amber-300'
         }`}
@@ -158,6 +212,7 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
                   estadoFiltroId,
                   estaSeleccionada(fila, columna)
                 );
+                const tieneObservaciones = celdaAsignaciones.some((a) => a.observaciones?.trim());
 
                 return (
                   <div
@@ -167,12 +222,15 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
                     onMouseDown={() => handleMouseDown(fila, columna)}
                     onMouseEnter={() => handleMouseEnter(fila, columna)}
                     title={construirTooltip(fila, columna, celdaAsignaciones)}
-                    className={`w-11 h-11 border border-gray-400 flex items-center justify-center text-white font-bold transition-shadow ${
+                    className={`relative w-11 h-11 border border-gray-400 flex items-center justify-center text-white font-bold transition-shadow ${
                       modoEdicion ? 'cursor-pointer hover:ring-2 hover:ring-green-600' : 'cursor-default'
                     } ${className}`}
                     style={style}
                   >
                     {asterisco && '*'}
+                    {tieneObservaciones && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-black/60 rounded-full" />
+                    )}
                   </div>
                 );
               })}

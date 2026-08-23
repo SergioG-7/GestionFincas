@@ -28,6 +28,28 @@ async function createEstado(req, res) {
   }
 }
 
+async function updateEstado(req, res) {
+  const { nombre, color_hexadecimal } = req.body;
+
+  if (!nombre || !color_hexadecimal) {
+    return res.status(400).json({ message: 'nombre y color_hexadecimal son obligatorios' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE estados SET nombre = ?, color_hexadecimal = ? WHERE id = ?',
+      [nombre, color_hexadecimal, req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Estado no encontrado' });
+    }
+    const [[estado]] = await pool.query('SELECT * FROM estados WHERE id = ?', [req.params.id]);
+    res.json(estado);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
 async function deleteEstado(req, res) {
   try {
     const [result] = await pool.query('DELETE FROM estados WHERE id = ?', [req.params.id]);
@@ -43,4 +65,4 @@ async function deleteEstado(req, res) {
   }
 }
 
-module.exports = { getEstados, createEstado, deleteEstado };
+module.exports = { getEstados, createEstado, updateEstado, deleteEstado };

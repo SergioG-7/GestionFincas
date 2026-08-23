@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import ParcelaGrid from '../components/ParcelaGrid';
 import EstadoFiltros from '../components/EstadoFiltros';
 import ParcelaStats from '../components/ParcelaStats';
+import EditarParcelaModal from '../components/EditarParcelaModal';
 
 export default function PanelPage() {
   const [fincas, setFincas] = useState([]);
@@ -13,11 +14,16 @@ export default function PanelPage() {
   const [asignaciones, setAsignaciones] = useState([]);
   const [filtroEstadoId, setFiltroEstadoId] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(true);
+  const [editandoParcela, setEditandoParcela] = useState(false);
+
+  const cargarFincas = useCallback(() => {
+    api.get('/fincas').then(({ data }) => setFincas(data));
+  }, []);
 
   useEffect(() => {
-    api.get('/fincas').then(({ data }) => setFincas(data));
+    cargarFincas();
     api.get('/estados').then(({ data }) => setEstados(data));
-  }, []);
+  }, [cargarFincas]);
 
   const finca = fincas.find((f) => f.id === Number(fincaId));
   const parcela = finca?.parcelas.find((p) => p.id === Number(parcelaId));
@@ -43,6 +49,21 @@ export default function PanelPage() {
   function handleSeleccionarParcela(id) {
     setParcelaId(id);
     setFiltroEstadoId(null);
+  }
+
+  async function handleEliminarParcela() {
+    const confirmado = window.confirm(
+      `¿Eliminar la parcela "${parcela.nombre}"? Se borrara tambien todo su historico de asignaciones.`
+    );
+    if (!confirmado) return;
+
+    try {
+      await api.delete(`/parcelas/${parcela.id}`);
+      setParcelaId('');
+      cargarFincas();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al eliminar la parcela.');
+    }
   }
 
   return (
@@ -90,6 +111,28 @@ export default function PanelPage() {
       {parcela && (
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-lg font-semibold text-gray-800">{parcela.nombre}</h2>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEditandoParcela(true)}
+                className="text-gray-500 hover:text-gray-800"
+                title="Editar parcela"
+              >
+                <Pencil size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={handleEliminarParcela}
+                className="text-red-600 hover:text-red-800"
+                title="Eliminar parcela"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <ParcelaStats asignaciones={asignaciones} estados={estados} />
 
             <button
@@ -127,6 +170,18 @@ export default function PanelPage() {
             onCambio={() => cargarAsignaciones(parcelaId)}
           />
         </div>
+      )}
+
+      {editandoParcela && (
+        <EditarParcelaModal
+          parcela={parcela}
+          onClose={() => setEditandoParcela(false)}
+          onGuardado={() => {
+            setEditandoParcela(false);
+            cargarFincas();
+            cargarAsignaciones(parcelaId);
+          }}
+        />
       )}
     </div>
   );
