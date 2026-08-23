@@ -3,20 +3,31 @@ import { Trash2 } from 'lucide-react';
 import Modal from './Modal';
 import api from '../api/axios';
 
+const SUGERENCIAS_OBSERVACIONES = ['Falta agua', 'Revisar plaga', 'Abonado completado', 'Mal estado'];
+
 export default function AsignacionModal({
   parcelaId,
-  fila,
-  columna,
+  celdas,
   estados,
   asignacionesActivas,
   onClose,
   onCambio,
+  onGuardar,
 }) {
   const [estadoId, setEstadoId] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [eliminandoId, setEliminandoId] = useState(null);
+
+  const esSeleccionUnica = celdas.length === 1;
+  const titulo = esSeleccionUnica
+    ? `Celda (fila ${celdas[0].fila + 1}, columna ${celdas[0].columna + 1})`
+    : `Asignar estado a ${celdas.length} celdas seleccionadas`;
+
+  function agregarSugerencia(texto) {
+    setObservaciones((actual) => (actual.trim() ? `${actual.trim()}, ${texto}` : texto));
+  }
 
   async function handleGuardar() {
     if (!estadoId) {
@@ -26,16 +37,13 @@ export default function AsignacionModal({
     setGuardando(true);
     setError('');
     try {
-      await api.post('/asignaciones', {
+      await api.post('/asignaciones/lote', {
         parcela_id: parcelaId,
-        fila,
-        columna,
         estado_id: Number(estadoId),
         observaciones,
+        celdas,
       });
-      setEstadoId('');
-      setObservaciones('');
-      onCambio();
+      onGuardar();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al guardar la asignacion.');
     } finally {
@@ -57,47 +65,49 @@ export default function AsignacionModal({
   }
 
   return (
-    <Modal title={`Celda (fila ${fila + 1}, columna ${columna + 1})`} onClose={onClose}>
+    <Modal title={titulo} onClose={onClose}>
       <div className="space-y-5">
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Estados activos</h4>
-          {asignacionesActivas.length === 0 ? (
-            <p className="text-sm text-gray-500">Esta celda no tiene estados activos.</p>
-          ) : (
-            <ul className="space-y-2">
-              {asignacionesActivas.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex items-center justify-between bg-gray-50 rounded px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="w-4 h-4 rounded-full border border-gray-300 shrink-0"
-                      style={{ backgroundColor: a.color_hexadecimal }}
-                    />
-                    <div className="min-w-0">
-                      <p className="text-sm text-gray-800 truncate">{a.estado_nombre}</p>
-                      {a.observaciones && (
-                        <p className="text-xs text-gray-500 truncate">{a.observaciones}</p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleEliminar(a.id)}
-                    disabled={eliminandoId === a.id}
-                    className="text-red-600 hover:text-red-800 disabled:opacity-50 shrink-0 ml-2"
-                    title="Eliminar"
+        {esSeleccionUnica && (
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Estados activos</h4>
+            {asignacionesActivas.length === 0 ? (
+              <p className="text-sm text-gray-500">Esta celda no tiene estados activos.</p>
+            ) : (
+              <ul className="space-y-2">
+                {asignacionesActivas.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between bg-gray-50 rounded px-3 py-2"
                   >
-                    <Trash2 size={16} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-4 h-4 rounded-full border border-gray-300 shrink-0"
+                        style={{ backgroundColor: a.color_hexadecimal }}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-800 truncate">{a.estado_nombre}</p>
+                        {a.observaciones && (
+                          <p className="text-xs text-gray-500 truncate">{a.observaciones}</p>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleEliminar(a.id)}
+                      disabled={eliminandoId === a.id}
+                      className="text-red-600 hover:text-red-800 disabled:opacity-50 shrink-0 ml-2"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
-        <div className="border-t border-gray-200 pt-4 space-y-4">
-          <h4 className="text-sm font-medium text-gray-700">Anadir estado</h4>
+        <div className={esSeleccionUnica ? 'border-t border-gray-200 pt-4 space-y-4' : 'space-y-4'}>
+          {esSeleccionUnica && <h4 className="text-sm font-medium text-gray-700">Anadir estado</h4>}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
             <select
@@ -122,6 +132,18 @@ export default function AsignacionModal({
               rows={3}
               className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
             />
+            <div className="flex flex-wrap gap-2 mt-2">
+              {SUGERENCIAS_OBSERVACIONES.map((sugerencia) => (
+                <button
+                  key={sugerencia}
+                  type="button"
+                  onClick={() => agregarSugerencia(sugerencia)}
+                  className="text-xs px-2.5 py-1 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+                >
+                  {sugerencia}
+                </button>
+              ))}
+            </div>
           </div>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -131,7 +153,7 @@ export default function AsignacionModal({
               onClick={onClose}
               className="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
-              Cerrar
+              Cancelar
             </button>
             <button
               onClick={handleGuardar}

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Lock, Unlock } from 'lucide-react';
 import api from '../api/axios';
 import ParcelaGrid from '../components/ParcelaGrid';
 import EstadoFiltros from '../components/EstadoFiltros';
 import ParcelaStats from '../components/ParcelaStats';
-import AsignacionModal from '../components/AsignacionModal';
 
 export default function PanelPage() {
   const [fincas, setFincas] = useState([]);
@@ -12,7 +12,7 @@ export default function PanelPage() {
   const [parcelaId, setParcelaId] = useState('');
   const [asignaciones, setAsignaciones] = useState([]);
   const [filtroEstadoId, setFiltroEstadoId] = useState(null);
-  const [celdaSeleccionada, setCeldaSeleccionada] = useState(null);
+  const [modoEdicion, setModoEdicion] = useState(true);
 
   useEffect(() => {
     api.get('/fincas').then(({ data }) => setFincas(data));
@@ -89,7 +89,22 @@ export default function PanelPage() {
 
       {parcela && (
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <ParcelaStats asignaciones={asignaciones} estados={estados} />
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <ParcelaStats asignaciones={asignaciones} estados={estados} />
+
+            <button
+              type="button"
+              onClick={() => setModoEdicion((m) => !m)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium transition-colors shrink-0 ${
+                modoEdicion
+                  ? 'bg-green-700 border-green-700 text-white hover:bg-green-800'
+                  : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {modoEdicion ? <Unlock size={16} /> : <Lock size={16} />}
+              {modoEdicion ? 'Modo edicion' : 'Solo lectura'}
+            </button>
+          </div>
 
           <EstadoFiltros
             estados={estados}
@@ -97,29 +112,21 @@ export default function PanelPage() {
             onSeleccionar={setFiltroEstadoId}
           />
 
-          <div className="overflow-auto">
-            <ParcelaGrid
-              parcela={parcela}
-              asignaciones={asignaciones}
-              estadoFiltroId={filtroEstadoId}
-              onCellClick={(fila, columna) => setCeldaSeleccionada({ fila, columna })}
-            />
-          </div>
-        </div>
-      )}
-
-      {celdaSeleccionada && (
-        <AsignacionModal
-          parcelaId={parcela.id}
-          fila={celdaSeleccionada.fila}
-          columna={celdaSeleccionada.columna}
-          estados={estados}
-          asignacionesActivas={asignaciones.filter(
-            (a) => a.fila === celdaSeleccionada.fila && a.columna === celdaSeleccionada.columna
+          {modoEdicion && (
+            <p className="text-xs text-gray-500">
+              Haz click y arrastra para seleccionar varias celdas a la vez.
+            </p>
           )}
-          onClose={() => setCeldaSeleccionada(null)}
-          onCambio={() => cargarAsignaciones(parcelaId)}
-        />
+
+          <ParcelaGrid
+            parcela={parcela}
+            asignaciones={asignaciones}
+            estados={estados}
+            estadoFiltroId={filtroEstadoId}
+            modoEdicion={modoEdicion}
+            onCambio={() => cargarAsignaciones(parcelaId)}
+          />
+        </div>
       )}
     </div>
   );

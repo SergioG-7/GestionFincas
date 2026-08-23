@@ -45,6 +45,46 @@ async function createAsignacion(req, res) {
   }
 }
 
+async function createAsignacionesLote(req, res) {
+  const { parcela_id, estado_id, observaciones, celdas } = req.body;
+
+  if (!parcela_id || !estado_id || !Array.isArray(celdas) || celdas.length === 0) {
+    return res.status(400).json({ message: 'parcela_id, estado_id y al menos una celda son obligatorios' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    for (const celda of celdas) {
+      await conn.query(
+        `INSERT INTO asignaciones_celdas
+          (parcela_id, fila, columna, estado_id, observaciones, fecha_asignacion, activo_en_celda)
+         VALUES (?, ?, ?, ?, ?, CURDATE(), 1)`,
+        [parcela_id, celda.fila, celda.columna, estado_id, observaciones || null]
+      );
+    }
+
+    await conn.commit();
+
+    const [asignaciones] = await pool.query(
+      `SELECT ac.*, e.nombre AS estado_nombre, e.color_hexadecimal
+       FROM asignaciones_celdas ac
+       JOIN estados e ON e.id = ac.estado_id
+       WHERE ac.parcela_id = ? AND ac.activo_en_celda = 1
+       ORDER BY ac.fecha_asignacion ASC, ac.id ASC`,
+      [parcela_id]
+    );
+
+    res.status(201).json(asignaciones);
+  } catch (err) {
+    await conn.rollback();
+    res.status(500).json({ message: err.message });
+  } finally {
+    conn.release();
+  }
+}
+
 async function desactivarAsignacion(req, res) {
   try {
     const [result] = await pool.query(
@@ -112,6 +152,7 @@ async function getHistorico(req, res) {
 module.exports = {
   getAsignacionesPorParcela,
   createAsignacion,
+  createAsignacionesLote,
   desactivarAsignacion,
   getHistorico,
 };
