@@ -114,4 +114,103 @@ async function upsertTemporada(req, res) {
   }
 }
 
-module.exports = { getAbonado, upsertAbonado, deleteAbonado, getTemporada, upsertTemporada };
+async function getAniosConDatos(req, res) {
+  const { finca_id } = req.query;
+
+  if (!finca_id) {
+    return res.status(400).json({ message: 'finca_id es obligatorio' });
+  }
+
+  try {
+    const [filas] = await pool.query(
+      'SELECT DISTINCT temporada_anio FROM planes_abonado WHERE finca_id = ? ORDER BY temporada_anio DESC',
+      [finca_id]
+    );
+    res.json(filas.map((f) => f.temporada_anio));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+function desplazarAnio(fecha, anioDestino) {
+  if (!fecha) return null;
+  const d = new Date(fecha);
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${anioDestino}-${mes}-${dia}`;
+}
+
+async function copiarPlan(req, res) {
+  const { finca_id, anio_origen, anio_destino } = req.body;
+
+  if (!finca_id || !anio_origen || !anio_destino) {
+    return res.status(400).json({ message: 'finca_id, anio_origen y anio_destino son obligatorios' });
+  }
+  if (Number(anio_origen) === Number(anio_destino)) {
+    return res.status(400).json({ message: 'El anio de origen y destino deben ser distintos' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    const [registrosOrigen] = await conn.query(
+      'SELECT * FROM planes_abonado WHERE finca_id = ? AND temporada_anio = ?',
+      [finca_id, anio_origen]
+    );
+
+    if (registrosOrigen.length === 0) {
+      return res.status(400).json({ message: `No hay plan de abonado guardado en ${anio_origen} para copiar` });
+    }
+
+    await conn.beginTransaction();
+
+    const [[temporadaOrigen]] = await conn.query(
+      'SELECT fecha_inicio, fecha_fin FROM temporadas_fincas WHERE finca_id = ? AND anio = ?',
+      [finca_id, anio_origen]
+    );
+
+    if (temporadaOrigen) {
+      await conn.query(
+        `INSERT INTO temporadas_fincas (finca_id, anio, fecha_inicio, fecha_fin)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE fecha_inicio = VALUES(fecha_inicio), fecha_fin = VALUES(fecha_fin)`,
+        [
+          finca_id,
+          anio_destino,
+          desplazarAnio(temporadaOrigen.fecha_inicio, anio_destino),
+          desplazarAnio(temporadaOrigen.fecha_fin, anio_destino),
+        ]
+      );
+    }
+
+    await conn.query('DELETE FROM planes_abonado WHERE finca_id = ? AND temporada_anio = ?', [
+      finca_id,
+      anio_destino,
+    ]);
+
+    for (const registro of registrosOrigen) {
+      await conn.query(
+        `INSERT INTO planes_abonado (finca_id, temporada_anio, mes, tipo_abono_id, cantidad_dosis, observaciones)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [finca_id, anio_destino, registro.mes, registro.tipo_abono_id, registro.cantidad_dosis, registro.observaciones]
+      );
+    }
+
+    await conn.commit();
+    res.json({ ok: true, copiados: registrosOrigen.length });
+  } catch (err) {
+    await conn.rollback();
+    res.status(500).json({ message: err.message });
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = {
+  getAbonado,
+  upsertAbonado,
+  deleteAbonado,
+  getTemporada,
+  upsertTemporada,
+  getAniosConDatos,
+  copiarPlan,
+};
