@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Lock, Unlock, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import ParcelaGrid from '../components/ParcelaGrid';
@@ -16,6 +16,7 @@ export default function PanelPage() {
   const [modoEdicion, setModoEdicion] = useState(true);
   const [editandoParcela, setEditandoParcela] = useState(false);
   const [error, setError] = useState('');
+  const seleccionInicialHecha = useRef(false);
 
   const cargarDatosIniciales = useCallback(async () => {
     setError('');
@@ -26,6 +27,15 @@ export default function PanelPage() {
       ]);
       setFincas(fincasData);
       setEstados(estadosData);
+
+      if (!seleccionInicialHecha.current && fincasData.length > 0) {
+        seleccionInicialHecha.current = true;
+        const primeraFinca = fincasData[0];
+        setFincaId(String(primeraFinca.id));
+        if (primeraFinca.parcelas.length > 0) {
+          setParcelaId(String(primeraFinca.parcelas[0].id));
+        }
+      }
     } catch {
       setError('No se pudieron cargar los datos. Comprueba tu conexion e intenta de nuevo.');
     }

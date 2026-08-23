@@ -68,11 +68,66 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
 
   useEffect(() => {
     if (!isDragging) return;
-    function handleWindowMouseUp() {
+    function finalizarArrastre() {
       setIsDragging(false);
     }
-    window.addEventListener('mouseup', handleWindowMouseUp);
-    return () => window.removeEventListener('mouseup', handleWindowMouseUp);
+    window.addEventListener('mouseup', finalizarArrastre);
+    window.addEventListener('touchend', finalizarArrastre);
+    window.addEventListener('touchcancel', finalizarArrastre);
+    return () => {
+      window.removeEventListener('mouseup', finalizarArrastre);
+      window.removeEventListener('touchend', finalizarArrastre);
+      window.removeEventListener('touchcancel', finalizarArrastre);
+    };
+  }, [isDragging]);
+
+  // Arrastre tactil: touchstart inicia la seleccion (equivalente a mousedown).
+  useEffect(() => {
+    const contenedor = contenedorRef.current;
+    if (!contenedor || !modoEdicion) return;
+
+    function handleTouchStart(e) {
+      const touch = e.touches[0];
+      if (!touch) return;
+      const elemento = document.elementFromPoint(touch.clientX, touch.clientY);
+      const celda = elemento?.closest('[data-fila]');
+      if (!celda) return;
+      e.preventDefault();
+      setIsDragging(true);
+      setSelectedCells([{ fila: Number(celda.dataset.fila), columna: Number(celda.dataset.columna) }]);
+    }
+
+    contenedor.addEventListener('touchstart', handleTouchStart, { passive: false });
+    return () => contenedor.removeEventListener('touchstart', handleTouchStart);
+  }, [modoEdicion]);
+
+  // Arrastre tactil: touchmove va sumando celdas y activa el auto-scroll cerca de los bordes.
+  // Se usa un listener nativo (passive:false) porque React trata touchmove como pasivo por defecto,
+  // lo que impediria bloquear el scroll de la pagina mientras se selecciona.
+  useEffect(() => {
+    const contenedor = contenedorRef.current;
+    if (!isDragging || !contenedor) return;
+
+    function handleTouchMove(e) {
+      const touch = e.touches[0];
+      if (!touch) return;
+      e.preventDefault();
+
+      const rect = contenedor.getBoundingClientRect();
+      velocidadScrollRef.current = {
+        x: calcularVelocidadEje(touch.clientX, rect.left, rect.right),
+        y: calcularVelocidadEje(touch.clientY, rect.top, rect.bottom),
+      };
+
+      const elemento = document.elementFromPoint(touch.clientX, touch.clientY);
+      const celda = elemento?.closest('[data-fila]');
+      if (celda) {
+        agregarCelda(Number(celda.dataset.fila), Number(celda.dataset.columna));
+      }
+    }
+
+    contenedor.addEventListener('touchmove', handleTouchMove, { passive: false });
+    return () => contenedor.removeEventListener('touchmove', handleTouchMove);
   }, [isDragging]);
 
   useEffect(() => {
@@ -219,13 +274,15 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
                     key={key}
                     role="button"
                     tabIndex={0}
+                    data-fila={fila}
+                    data-columna={columna}
                     onMouseDown={() => handleMouseDown(fila, columna)}
                     onMouseEnter={() => handleMouseEnter(fila, columna)}
                     title={construirTooltip(fila, columna, celdaAsignaciones)}
                     className={`relative w-11 h-11 border border-gray-400 flex items-center justify-center text-white font-bold transition-shadow ${
                       modoEdicion ? 'cursor-pointer hover:ring-2 hover:ring-green-600' : 'cursor-default'
                     } ${className}`}
-                    style={style}
+                    style={{ ...style, touchAction: modoEdicion ? 'none' : 'auto' }}
                   >
                     {asterisco && '*'}
                     {tieneObservaciones && (
