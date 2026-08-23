@@ -37,6 +37,21 @@ function calcularEstiloCelda(celdaAsignaciones, estadoFiltroId) {
   };
 }
 
+function construirTooltip(fila, columna, celdaAsignaciones) {
+  const lineas = [`Fila ${fila + 1}, Columna ${columna + 1}`];
+
+  if (celdaAsignaciones.length > 0) {
+    lineas.push(`Estados: ${celdaAsignaciones.map((a) => a.estado_nombre).join(', ')}`);
+
+    const ultimaObservacion = [...celdaAsignaciones].reverse().find((a) => a.observaciones);
+    if (ultimaObservacion) {
+      lineas.push(`Ultima observacion: ${ultimaObservacion.observaciones}`);
+    }
+  }
+
+  return lineas.join('\n');
+}
+
 export default function ParcelaGrid({ parcela, asignaciones, estadoFiltroId, onCellClick }) {
   const mapa = {};
   asignaciones.forEach((a) => {
@@ -64,7 +79,7 @@ export default function ParcelaGrid({ parcela, asignaciones, estadoFiltroId, onC
               key={key}
               type="button"
               onClick={() => onCellClick(fila, columna)}
-              title={`Fila ${fila + 1}, Columna ${columna + 1}`}
+              title={construirTooltip(fila, columna, celdaAsignaciones)}
               className={`w-11 h-11 border border-gray-400 flex items-center justify-center text-white font-bold hover:ring-2 hover:ring-green-600 transition-shadow ${className}`}
               style={style}
             >

@@ -5,6 +5,7 @@ const links = [
   { to: '/', label: 'Panel' },
   { to: '/fincas', label: 'Fincas' },
   { to: '/estados', label: 'Estados' },
+  { to: '/historico', label: 'Historico' },
 ];
 
 export default function Navbar() {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
 import ParcelaGrid from '../components/ParcelaGrid';
 import EstadoFiltros from '../components/EstadoFiltros';
+import ParcelaStats from '../components/ParcelaStats';
 import AsignacionModal from '../components/AsignacionModal';
 
 export default function PanelPage() {
@@ -88,6 +89,8 @@ export default function PanelPage() {
 
       {parcela && (
         <div className="bg-white rounded-lg shadow p-6 space-y-4">
+          <ParcelaStats asignaciones={asignaciones} estados={estados} />
+
           <EstadoFiltros
             estados={estados}
             filtroSeleccionado={filtroEstadoId}
@@ -111,11 +114,11 @@ export default function PanelPage() {
           fila={celdaSeleccionada.fila}
           columna={celdaSeleccionada.columna}
           estados={estados}
+          asignacionesActivas={asignaciones.filter(
+            (a) => a.fila === celdaSeleccionada.fila && a.columna === celdaSeleccionada.columna
+          )}
           onClose={() => setCeldaSeleccionada(null)}
-          onGuardada={() => {
-            setCeldaSeleccionada(null);
-            cargarAsignaciones(parcelaId);
-          }}
+          onCambio={() => cargarAsignaciones(parcelaId)}
         />
       )}
     </div>

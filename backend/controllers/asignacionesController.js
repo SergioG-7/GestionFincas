@@ -45,4 +45,73 @@ async function createAsignacion(req, res) {
   }
 }
 
-module.exports = { getAsignacionesPorParcela, createAsignacion };
+async function desactivarAsignacion(req, res) {
+  try {
+    const [result] = await pool.query(
+      'UPDATE asignaciones_celdas SET activo_en_celda = 0 WHERE id = ?',
+      [req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Asignacion no encontrada' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+async function getHistorico(req, res) {
+  const { desde, hasta, finca_id, parcela_id, estado_id } = req.query;
+
+  const condiciones = [];
+  const valores = [];
+
+  if (desde) {
+    condiciones.push('ac.fecha_asignacion >= ?');
+    valores.push(desde);
+  }
+  if (hasta) {
+    condiciones.push('ac.fecha_asignacion <= ?');
+    valores.push(hasta);
+  }
+  if (finca_id) {
+    condiciones.push('f.id = ?');
+    valores.push(finca_id);
+  }
+  if (parcela_id) {
+    condiciones.push('p.id = ?');
+    valores.push(parcela_id);
+  }
+  if (estado_id) {
+    condiciones.push('e.id = ?');
+    valores.push(estado_id);
+  }
+
+  const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT ac.id, ac.fila, ac.columna, ac.fecha_asignacion, ac.observaciones, ac.activo_en_celda,
+              f.id AS finca_id, f.nombre AS finca_nombre,
+              p.id AS parcela_id, p.nombre AS parcela_nombre,
+              e.id AS estado_id, e.nombre AS estado_nombre, e.color_hexadecimal
+       FROM asignaciones_celdas ac
+       JOIN parcelas p ON p.id = ac.parcela_id
+       JOIN fincas f ON f.id = p.finca_id
+       JOIN estados e ON e.id = ac.estado_id
+       ${where}
+       ORDER BY ac.fecha_asignacion DESC, ac.id DESC`,
+      valores
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+}
+
+module.exports = {
+  getAsignacionesPorParcela,
+  createAsignacion,
+  desactivarAsignacion,
+  getHistorico,
+};
