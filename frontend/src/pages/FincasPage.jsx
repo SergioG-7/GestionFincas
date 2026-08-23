@@ -6,12 +6,16 @@ import FincasList from '../components/FincasList';
 export default function FincasPage() {
   const [fincas, setFincas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const cargarFincas = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const { data } = await api.get('/fincas');
       setFincas(data);
+    } catch {
+      setError('No se pudieron cargar las fincas. Comprueba tu conexion e intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -27,6 +31,14 @@ export default function FincasPage() {
       <FincaForm onFincaCreada={cargarFincas} />
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Fincas registradas</h2>
+        {error && (
+          <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded px-3 py-2 mb-3">
+            {error}{' '}
+            <button onClick={cargarFincas} className="underline font-medium">
+              Reintentar
+            </button>
+          </p>
+        )}
         <FincasList fincas={fincas} loading={loading} onCambio={cargarFincas} />
       </div>
     </div>

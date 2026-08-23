@@ -12,9 +12,12 @@ export default function EstadosPage() {
 
   async function cargarEstados() {
     setLoading(true);
+    setError('');
     try {
       const { data } = await api.get('/estados');
       setEstados(data);
+    } catch {
+      setError('No se pudieron cargar los estados. Comprueba tu conexion e intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +109,14 @@ export default function EstadosPage() {
         )}
       </form>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
+          {error}{' '}
+          <button onClick={cargarEstados} className="underline font-medium">
+            Reintentar
+          </button>
+        </p>
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">Estados registrados</h2>

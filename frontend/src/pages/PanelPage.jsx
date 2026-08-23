@@ -15,15 +15,29 @@ export default function PanelPage() {
   const [filtroEstadoId, setFiltroEstadoId] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(true);
   const [editandoParcela, setEditandoParcela] = useState(false);
+  const [error, setError] = useState('');
+
+  const cargarDatosIniciales = useCallback(async () => {
+    setError('');
+    try {
+      const [{ data: fincasData }, { data: estadosData }] = await Promise.all([
+        api.get('/fincas'),
+        api.get('/estados'),
+      ]);
+      setFincas(fincasData);
+      setEstados(estadosData);
+    } catch {
+      setError('No se pudieron cargar los datos. Comprueba tu conexion e intenta de nuevo.');
+    }
+  }, []);
 
   const cargarFincas = useCallback(() => {
     api.get('/fincas').then(({ data }) => setFincas(data));
   }, []);
 
   useEffect(() => {
-    cargarFincas();
-    api.get('/estados').then(({ data }) => setEstados(data));
-  }, [cargarFincas]);
+    cargarDatosIniciales();
+  }, [cargarDatosIniciales]);
 
   const finca = fincas.find((f) => f.id === Number(fincaId));
   const parcela = finca?.parcelas.find((p) => p.id === Number(parcelaId));
@@ -33,7 +47,10 @@ export default function PanelPage() {
       setAsignaciones([]);
       return;
     }
-    api.get(`/asignaciones/parcela/${idParcela}`).then(({ data }) => setAsignaciones(data));
+    api
+      .get(`/asignaciones/parcela/${idParcela}`)
+      .then(({ data }) => setAsignaciones(data))
+      .catch(() => setError('No se pudieron cargar los datos de la parcela. Intenta de nuevo.'));
   }, []);
 
   useEffect(() => {
@@ -69,6 +86,15 @@ export default function PanelPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">Panel</h1>
+
+      {error && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
+          {error}{' '}
+          <button onClick={cargarDatosIniciales} className="underline font-medium">
+            Reintentar
+          </button>
+        </p>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Finca</label>

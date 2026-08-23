@@ -47,18 +47,21 @@ export default function HistoricoPage() {
   const [filas, setFilas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtros, setFiltros] = useState(filtrosVacios);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/fincas').then(({ data }) => setFincas(data));
-    api.get('/estados').then(({ data }) => setEstados(data));
+    api.get('/fincas').then(({ data }) => setFincas(data)).catch(() => {});
+    api.get('/estados').then(({ data }) => setEstados(data)).catch(() => {});
   }, []);
 
   useEffect(() => {
     setLoading(true);
+    setError('');
     const params = Object.fromEntries(Object.entries(filtros).filter(([, v]) => v));
     api
       .get('/asignaciones/historico', { params })
       .then(({ data }) => setFilas(data))
+      .catch(() => setError('No se pudo cargar el historico. Comprueba tu conexion e intenta de nuevo.'))
       .finally(() => setLoading(false));
   }, [filtros]);
 
@@ -157,6 +160,15 @@ export default function HistoricoPage() {
           </select>
         </div>
       </div>
+
+      {error && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
+          {error}{' '}
+          <button onClick={() => setFiltros({ ...filtros })} className="underline font-medium">
+            Reintentar
+          </button>
+        </p>
+      )}
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full text-sm text-left">

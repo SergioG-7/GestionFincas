@@ -33,9 +33,9 @@ export default function FincasList({ fincas, loading, onCambio }) {
       <div className="space-y-4">
         {fincas.map((finca) => (
           <div key={finca.id} className="bg-white rounded-lg shadow p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold text-gray-800">{finca.nombre}</h3>
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h3 className="text-lg font-semibold text-gray-800 min-w-0 break-words">{finca.nombre}</h3>
+              <div className="flex items-center gap-3 shrink-0">
                 <span className="text-sm text-gray-500 flex items-center gap-1">
                   <MapPin size={16} />
                   {finca.localidad || 'Sin localidad'}
