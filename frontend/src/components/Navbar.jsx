@@ -1,7 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import { Sprout } from 'lucide-react';
 
-const links = [{ to: '/', label: 'Fincas' }];
+const links = [
+  { to: '/', label: 'Panel' },
+  { to: '/fincas', label: 'Fincas' },
+  { to: '/estados', label: 'Estados' },
+];
 
 export default function Navbar() {
   return (

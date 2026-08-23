@@ -9,3 +9,20 @@
 [32m[nodemon] starting `node server.js`[39m
 ◇ injected env (6) from .env // tip: ⌁ auth for agents [www.vestauth.com]
 Servidor backend escuchando en http://localhost:3001
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+◇ injected env (6) from .env // tip: ⌘ suppress logs { quiet: true }
+Servidor backend escuchando en http://localhost:3001
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+◇ injected env (6) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+Servidor backend escuchando en http://localhost:3001
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+◇ injected env (6) from .env // tip: ⌘ suppress logs { quiet: true }
+Servidor backend escuchando en http://localhost:3001
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+◇ injected env (6) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+Servidor backend escuchando en http://localhost:3001
+[32m[nodemon] restarting due to changes...[39m
