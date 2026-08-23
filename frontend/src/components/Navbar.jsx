@@ -4,7 +4,6 @@ import { Sprout } from 'lucide-react';
 const links = [
   { to: '/', label: 'Panel' },
   { to: '/fincas', label: 'Fincas' },
-  { to: '/estados', label: 'Estados' },
   { to: '/historico', label: 'Historico' },
   { to: '/contabilidad', label: 'Contabilidad' },
   { to: '/plan-abonado', label: 'Plan Abonado' },

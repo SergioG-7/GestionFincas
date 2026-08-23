@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Lock, Unlock, Pencil, Trash2 } from 'lucide-react';
+import { Lock, Unlock, Pencil, Trash2, Settings } from 'lucide-react';
 import api from '../api/axios';
 import ParcelaGrid from '../components/ParcelaGrid';
 import EstadoFiltros from '../components/EstadoFiltros';
 import ParcelaStats from '../components/ParcelaStats';
 import EditarParcelaModal from '../components/EditarParcelaModal';
+import GestionarEstadosModal from '../components/GestionarEstadosModal';
 
 export default function PanelPage() {
   const [fincas, setFincas] = useState([]);
@@ -15,6 +16,7 @@ export default function PanelPage() {
   const [filtroEstadoId, setFiltroEstadoId] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(true);
   const [editandoParcela, setEditandoParcela] = useState(false);
+  const [gestionandoEstados, setGestionandoEstados] = useState(false);
   const [error, setError] = useState('');
   const seleccionInicialHecha = useRef(false);
 
@@ -43,6 +45,10 @@ export default function PanelPage() {
 
   const cargarFincas = useCallback(() => {
     api.get('/fincas').then(({ data }) => setFincas(data));
+  }, []);
+
+  const cargarEstados = useCallback(() => {
+    api.get('/estados').then(({ data }) => setEstados(data));
   }, []);
 
   useEffect(() => {
@@ -95,7 +101,17 @@ export default function PanelPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Panel</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold text-gray-800">Panel</h1>
+        <button
+          type="button"
+          onClick={() => setGestionandoEstados(true)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-sm hover:bg-gray-50"
+        >
+          <Settings size={16} />
+          Gestionar estados
+        </button>
+      </div>
 
       {error && (
         <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
@@ -215,6 +231,17 @@ export default function PanelPage() {
           onGuardado={() => {
             setEditandoParcela(false);
             cargarFincas();
+            cargarAsignaciones(parcelaId);
+          }}
+        />
+      )}
+
+      {gestionandoEstados && (
+        <GestionarEstadosModal
+          estados={estados}
+          onClose={() => setGestionandoEstados(false)}
+          onCambio={() => {
+            cargarEstados();
             cargarAsignaciones(parcelaId);
           }}
         />

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Settings } from 'lucide-react';
 import Modal from './Modal';
 import api from '../api/axios';
 
@@ -13,7 +12,7 @@ const vacio = {
   observaciones: '',
 };
 
-export default function TransaccionModal({ transaccion, fincas, categorias, onClose, onGuardado, onGestionarCategorias }) {
+export default function TransaccionModal({ transaccion, fincas, categorias, onClose, onGuardado }) {
   const [form, setForm] = useState(
     transaccion
       ? {
@@ -116,30 +115,20 @@ export default function TransaccionModal({ transaccion, fincas, categorias, onCl
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-            <div className="flex gap-2">
-              <select
-                value={form.categoria_id}
-                onChange={(e) => actualizar('categoria_id', e.target.value)}
-                className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
-              >
-                <option value="">Sin categoria</option>
-                {categorias
-                  .filter((c) => c.tipo === 'ambos' || c.tipo === form.tipo)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-              </select>
-              <button
-                type="button"
-                onClick={onGestionarCategorias}
-                className="px-3 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
-                title="Gestionar categorias"
-              >
-                <Settings size={18} />
-              </button>
-            </div>
+            <select
+              value={form.categoria_id}
+              onChange={(e) => actualizar('categoria_id', e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+            >
+              <option value="">Sin categoria</option>
+              {categorias
+                .filter((c) => c.tipo === 'ambos' || c.tipo === form.tipo)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+            </select>
           </div>
         </div>
 

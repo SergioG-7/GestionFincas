@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
 import api from '../api/axios';
 import TransaccionModal from '../components/TransaccionModal';
 import GestionarCategoriasModal from '../components/GestionarCategoriasModal';
@@ -81,14 +81,24 @@ export default function ContabilidadPage() {
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-gray-800">Contabilidad</h1>
-        <button
-          type="button"
-          onClick={abrirNuevo}
-          className="inline-flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
-        >
-          <Plus size={18} />
-          Nuevo movimiento
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setGestionandoCategorias(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-sm hover:bg-gray-50"
+          >
+            <Settings size={16} />
+            Gestionar categorias
+          </button>
+          <button
+            type="button"
+            onClick={abrirNuevo}
+            className="inline-flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
+          >
+            <Plus size={18} />
+            Nuevo movimiento
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-4">
@@ -231,7 +241,6 @@ export default function ContabilidadPage() {
             setModalAbierto(false);
             cargarTransacciones();
           }}
-          onGestionarCategorias={() => setGestionandoCategorias(true)}
         />
       )}
 

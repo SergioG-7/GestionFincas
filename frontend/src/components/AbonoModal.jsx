@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import Modal from './Modal';
 import api from '../api/axios';
 
@@ -17,7 +17,6 @@ export default function AbonoModal({
   onClose,
   onCambio,
   onGuardar,
-  onTipoCreado,
 }) {
   const [tipoAbonoId, setTipoAbonoId] = useState('');
   const [cantidadDosis, setCantidadDosis] = useState('');
@@ -26,32 +25,6 @@ export default function AbonoModal({
   const [guardando, setGuardando] = useState(false);
   const [eliminandoId, setEliminandoId] = useState(null);
   const [limpiando, setLimpiando] = useState(false);
-
-  const [creandoTipo, setCreandoTipo] = useState(false);
-  const [nuevoNombre, setNuevoNombre] = useState('');
-  const [nuevoColor, setNuevoColor] = useState('#22c55e');
-  const [creandoGuardando, setCreandoGuardando] = useState(false);
-
-  async function handleCrearTipo() {
-    if (!nuevoNombre) {
-      setError('Indica un nombre para el nuevo tipo de abono.');
-      return;
-    }
-    setCreandoGuardando(true);
-    setError('');
-    try {
-      const { data } = await api.post('/tipos-abono', { nombre: nuevoNombre, color_hexadecimal: nuevoColor });
-      onTipoCreado(data);
-      setTipoAbonoId(String(data.id));
-      setCreandoTipo(false);
-      setNuevoNombre('');
-      setNuevoColor('#22c55e');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error al crear el tipo de abono.');
-    } finally {
-      setCreandoGuardando(false);
-    }
-  }
 
   async function handleGuardar() {
     if (!tipoAbonoId) {
@@ -155,60 +128,19 @@ export default function AbonoModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de abono</label>
-            <div className="flex gap-2">
-              <select
-                value={tipoAbonoId}
-                onChange={(e) => setTipoAbonoId(e.target.value)}
-                className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
-              >
-                <option value="">Selecciona un tipo</option>
-                {tiposAbono.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setCreandoTipo((v) => !v)}
-                className="px-3 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
-                title="Crear nuevo tipo de abono"
-              >
-                <Plus size={18} />
-              </button>
-            </div>
+            <select
+              value={tipoAbonoId}
+              onChange={(e) => setTipoAbonoId(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+            >
+              <option value="">Selecciona un tipo</option>
+              {tiposAbono.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre}
+                </option>
+              ))}
+            </select>
           </div>
-
-          {creandoTipo && (
-            <div className="flex flex-wrap items-end gap-2 bg-gray-50 rounded p-3">
-              <div className="flex-1 min-w-[140px]">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del nuevo tipo</label>
-                <input
-                  type="text"
-                  value={nuevoNombre}
-                  onChange={(e) => setNuevoNombre(e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-600"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Color</label>
-                <input
-                  type="color"
-                  value={nuevoColor}
-                  onChange={(e) => setNuevoColor(e.target.value)}
-                  className="w-12 h-9 border border-gray-300 rounded cursor-pointer"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleCrearTipo}
-                disabled={creandoGuardando}
-                className="px-3 py-1.5 rounded bg-green-700 text-white text-sm hover:bg-green-800 disabled:opacity-50"
-              >
-                {creandoGuardando ? 'Creando...' : 'Crear'}
-              </button>
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Dosis / cantidad</label>

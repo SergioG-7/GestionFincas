@@ -236,7 +236,6 @@ export default function PlanAbonadoPage() {
             setMesSeleccionado(null);
             cargarRegistros();
           }}
-          onTipoCreado={(tipo) => setTiposAbono((actuales) => [...actuales, tipo])}
         />
       )}
 
