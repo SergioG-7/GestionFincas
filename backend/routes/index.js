@@ -6,6 +6,7 @@ router.use('/parcelas', require('./parcelas'));
 router.use('/estados', require('./estados'));
 router.use('/asignaciones', require('./asignaciones'));
 router.use('/transacciones', require('./transacciones'));
+router.use('/categorias-transacciones', require('./categoriasTransacciones'));
 router.use('/tipos-abono', require('./tiposAbono'));
 router.use('/abonado', require('./abonado'));
 

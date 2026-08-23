@@ -42,18 +42,30 @@ CREATE TABLE asignaciones_celdas (
     REFERENCES estados(id)
 ) ENGINE=InnoDB;
 
+-- Catalogo de categorias contables reutilizable.
+CREATE TABLE categorias_transacciones (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  tipo ENUM('gasto', 'ingreso', 'ambos') DEFAULT 'ambos',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- "categoria" (texto libre) queda sin usar por la app: se sustituyo por "categoria_id".
 CREATE TABLE transacciones (
   id INT AUTO_INCREMENT PRIMARY KEY,
   finca_id INT NULL,
   tipo ENUM('gasto', 'ingreso') NOT NULL,
   concepto VARCHAR(255) NOT NULL,
   categoria VARCHAR(100) NULL,
+  categoria_id INT NULL,
   importe DECIMAL(10, 2) NOT NULL,
   fecha DATE NOT NULL,
   observaciones TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_transacciones_finca FOREIGN KEY (finca_id)
-    REFERENCES fincas(id) ON DELETE SET NULL
+    REFERENCES fincas(id) ON DELETE SET NULL,
+  CONSTRAINT fk_transacciones_categoria FOREIGN KEY (categoria_id)
+    REFERENCES categorias_transacciones(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- Catalogo de tipos de abono (nombre + color), analogo a "estados".

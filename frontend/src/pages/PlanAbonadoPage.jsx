@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Settings } from 'lucide-react';
 import api from '../api/axios';
 import AbonoModal from '../components/AbonoModal';
+import GestionarTiposAbonoModal from '../components/GestionarTiposAbonoModal';
 
 const ANIO_ACTUAL = new Date().getFullYear();
 const MESES = [
@@ -18,17 +19,22 @@ export default function PlanAbonadoPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mesSeleccionado, setMesSeleccionado] = useState(null);
+  const [gestionandoTipos, setGestionandoTipos] = useState(false);
 
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [guardandoTemporada, setGuardandoTemporada] = useState(false);
+
+  function cargarTiposAbono() {
+    api.get('/tipos-abono').then(({ data }) => setTiposAbono(data)).catch(() => {});
+  }
 
   useEffect(() => {
     api.get('/fincas').then(({ data }) => {
       setFincas(data);
       if (data.length > 0) setFincaId((actual) => actual || String(data[0].id));
     }).catch(() => {});
-    api.get('/tipos-abono').then(({ data }) => setTiposAbono(data)).catch(() => {});
+    cargarTiposAbono();
   }, []);
 
   const cargarRegistros = useCallback(() => {
@@ -92,7 +98,17 @@ export default function PlanAbonadoPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Plan de abonado</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold text-gray-800">Plan de abonado</h1>
+        <button
+          type="button"
+          onClick={() => setGestionandoTipos(true)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-gray-300 text-gray-700 text-sm hover:bg-gray-50"
+        >
+          <Settings size={16} />
+          Gestionar tipos de abono
+        </button>
+      </div>
 
       <div className="flex flex-wrap gap-4">
         <div>
@@ -221,6 +237,17 @@ export default function PlanAbonadoPage() {
             cargarRegistros();
           }}
           onTipoCreado={(tipo) => setTiposAbono((actuales) => [...actuales, tipo])}
+        />
+      )}
+
+      {gestionandoTipos && (
+        <GestionarTiposAbonoModal
+          tiposAbono={tiposAbono}
+          onClose={() => setGestionandoTipos(false)}
+          onCambio={() => {
+            cargarTiposAbono();
+            cargarRegistros();
+          }}
         />
       )}
     </div>

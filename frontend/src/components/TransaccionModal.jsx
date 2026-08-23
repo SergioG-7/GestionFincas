@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Settings } from 'lucide-react';
 import Modal from './Modal';
 import api from '../api/axios';
 
@@ -6,20 +7,20 @@ const vacio = {
   fecha: new Date().toISOString().slice(0, 10),
   tipo: 'gasto',
   concepto: '',
-  categoria: '',
+  categoria_id: '',
   importe: '',
   finca_id: '',
   observaciones: '',
 };
 
-export default function TransaccionModal({ transaccion, fincas, onClose, onGuardado }) {
+export default function TransaccionModal({ transaccion, fincas, categorias, onClose, onGuardado, onGestionarCategorias }) {
   const [form, setForm] = useState(
     transaccion
       ? {
           fecha: transaccion.fecha.slice(0, 10),
           tipo: transaccion.tipo,
           concepto: transaccion.concepto,
-          categoria: transaccion.categoria || '',
+          categoria_id: transaccion.categoria_id || '',
           importe: transaccion.importe,
           finca_id: transaccion.finca_id || '',
           observaciones: transaccion.observaciones || '',
@@ -46,7 +47,7 @@ export default function TransaccionModal({ transaccion, fincas, onClose, onGuard
         finca_id: form.finca_id || null,
         tipo: form.tipo,
         concepto: form.concepto,
-        categoria: form.categoria || null,
+        categoria_id: form.categoria_id || null,
         importe: Number(form.importe),
         fecha: form.fecha,
         observaciones: form.observaciones || null,
@@ -115,13 +116,30 @@ export default function TransaccionModal({ transaccion, fincas, onClose, onGuard
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-            <input
-              type="text"
-              placeholder="Maquinaria, Jornales..."
-              value={form.categoria}
-              onChange={(e) => actualizar('categoria', e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
-            />
+            <div className="flex gap-2">
+              <select
+                value={form.categoria_id}
+                onChange={(e) => actualizar('categoria_id', e.target.value)}
+                className="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-600"
+              >
+                <option value="">Sin categoria</option>
+                {categorias
+                  .filter((c) => c.tipo === 'ambos' || c.tipo === form.tipo)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre}
+                    </option>
+                  ))}
+              </select>
+              <button
+                type="button"
+                onClick={onGestionarCategorias}
+                className="px-3 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 shrink-0"
+                title="Gestionar categorias"
+              >
+                <Settings size={18} />
+              </button>
+            </div>
           </div>
         </div>
 

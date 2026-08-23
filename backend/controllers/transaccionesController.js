@@ -1,5 +1,12 @@
 const pool = require('../config/db');
 
+const SELECT_BASE = `
+  SELECT t.*, f.nombre AS finca_nombre, c.nombre AS categoria_nombre, c.tipo AS categoria_tipo
+  FROM transacciones t
+  LEFT JOIN fincas f ON f.id = t.finca_id
+  LEFT JOIN categorias_transacciones c ON c.id = t.categoria_id
+`;
+
 async function getTransacciones(req, res) {
   const { anio, finca_id } = req.query;
 
@@ -19,11 +26,7 @@ async function getTransacciones(req, res) {
 
   try {
     const [transacciones] = await pool.query(
-      `SELECT t.*, f.nombre AS finca_nombre
-       FROM transacciones t
-       LEFT JOIN fincas f ON f.id = t.finca_id
-       ${where}
-       ORDER BY t.fecha DESC, t.id DESC`,
+      `${SELECT_BASE} ${where} ORDER BY t.fecha DESC, t.id DESC`,
       valores
     );
 
@@ -48,7 +51,7 @@ async function getTransacciones(req, res) {
 }
 
 async function createTransaccion(req, res) {
-  const { finca_id, tipo, concepto, categoria, importe, fecha, observaciones } = req.body;
+  const { finca_id, tipo, concepto, categoria_id, importe, fecha, observaciones } = req.body;
 
   if (!tipo || !['gasto', 'ingreso'].includes(tipo) || !concepto || importe === undefined || !fecha) {
     return res.status(400).json({ message: 'tipo, concepto, importe y fecha son obligatorios' });
@@ -56,16 +59,12 @@ async function createTransaccion(req, res) {
 
   try {
     const [result] = await pool.query(
-      `INSERT INTO transacciones (finca_id, tipo, concepto, categoria, importe, fecha, observaciones)
+      `INSERT INTO transacciones (finca_id, tipo, concepto, categoria_id, importe, fecha, observaciones)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [finca_id || null, tipo, concepto, categoria || null, importe, fecha, observaciones || null]
+      [finca_id || null, tipo, concepto, categoria_id || null, importe, fecha, observaciones || null]
     );
 
-    const [[transaccion]] = await pool.query(
-      `SELECT t.*, f.nombre AS finca_nombre FROM transacciones t
-       LEFT JOIN fincas f ON f.id = t.finca_id WHERE t.id = ?`,
-      [result.insertId]
-    );
+    const [[transaccion]] = await pool.query(`${SELECT_BASE} WHERE t.id = ?`, [result.insertId]);
 
     res.status(201).json(transaccion);
   } catch (err) {
@@ -74,7 +73,7 @@ async function createTransaccion(req, res) {
 }
 
 async function updateTransaccion(req, res) {
-  const { finca_id, tipo, concepto, categoria, importe, fecha, observaciones } = req.body;
+  const { finca_id, tipo, concepto, categoria_id, importe, fecha, observaciones } = req.body;
 
   if (!tipo || !['gasto', 'ingreso'].includes(tipo) || !concepto || importe === undefined || !fecha) {
     return res.status(400).json({ message: 'tipo, concepto, importe y fecha son obligatorios' });
@@ -83,20 +82,16 @@ async function updateTransaccion(req, res) {
   try {
     const [result] = await pool.query(
       `UPDATE transacciones
-       SET finca_id = ?, tipo = ?, concepto = ?, categoria = ?, importe = ?, fecha = ?, observaciones = ?
+       SET finca_id = ?, tipo = ?, concepto = ?, categoria_id = ?, importe = ?, fecha = ?, observaciones = ?
        WHERE id = ?`,
-      [finca_id || null, tipo, concepto, categoria || null, importe, fecha, observaciones || null, req.params.id]
+      [finca_id || null, tipo, concepto, categoria_id || null, importe, fecha, observaciones || null, req.params.id]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Transaccion no encontrada' });
     }
 
-    const [[transaccion]] = await pool.query(
-      `SELECT t.*, f.nombre AS finca_nombre FROM transacciones t
-       LEFT JOIN fincas f ON f.id = t.finca_id WHERE t.id = ?`,
-      [req.params.id]
-    );
+    const [[transaccion]] = await pool.query(`${SELECT_BASE} WHERE t.id = ?`, [req.params.id]);
 
     res.json(transaccion);
   } catch (err) {

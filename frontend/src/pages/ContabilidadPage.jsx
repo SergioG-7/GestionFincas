@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 import TransaccionModal from '../components/TransaccionModal';
+import GestionarCategoriasModal from '../components/GestionarCategoriasModal';
 
 const ANIO_ACTUAL = new Date().getFullYear();
 
@@ -11,6 +12,7 @@ function formatearImporte(valor) {
 
 export default function ContabilidadPage() {
   const [fincas, setFincas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [transacciones, setTransacciones] = useState([]);
   const [resumen, setResumen] = useState({ total_ingresos: 0, total_gastos: 0, balance_neto: 0 });
   const [loading, setLoading] = useState(true);
@@ -19,9 +21,15 @@ export default function ContabilidadPage() {
   const [fincaId, setFincaId] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [transaccionEditando, setTransaccionEditando] = useState(null);
+  const [gestionandoCategorias, setGestionandoCategorias] = useState(false);
+
+  function cargarCategorias() {
+    api.get('/categorias-transacciones').then(({ data }) => setCategorias(data)).catch(() => {});
+  }
 
   useEffect(() => {
     api.get('/fincas').then(({ data }) => setFincas(data)).catch(() => {});
+    cargarCategorias();
   }, []);
 
   async function cargarTransacciones() {
@@ -178,7 +186,7 @@ export default function ContabilidadPage() {
                     </span>
                   </td>
                   <td className="px-4 py-2">{t.concepto}</td>
-                  <td className="px-4 py-2 text-gray-600">{t.categoria || '-'}</td>
+                  <td className="px-4 py-2 text-gray-600">{t.categoria_nombre || '-'}</td>
                   <td className="px-4 py-2 text-gray-600">{t.finca_nombre || 'General'}</td>
                   <td
                     className={`px-4 py-2 text-right font-medium whitespace-nowrap ${
@@ -217,11 +225,21 @@ export default function ContabilidadPage() {
         <TransaccionModal
           transaccion={transaccionEditando}
           fincas={fincas}
+          categorias={categorias}
           onClose={() => setModalAbierto(false)}
           onGuardado={() => {
             setModalAbierto(false);
             cargarTransacciones();
           }}
+          onGestionarCategorias={() => setGestionandoCategorias(true)}
+        />
+      )}
+
+      {gestionandoCategorias && (
+        <GestionarCategoriasModal
+          categorias={categorias}
+          onClose={() => setGestionandoCategorias(false)}
+          onCambio={cargarCategorias}
         />
       )}
     </div>
