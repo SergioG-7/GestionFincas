@@ -9,6 +9,10 @@ const authMiddleware = require('./middlewares/authMiddleware');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Render esta detras de un proxy inverso: sin esto, express-rate-limit no puede
+// leer la IP real desde X-Forwarded-For y falla en cada peticion de login.
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 

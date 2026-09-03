@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken, limpiarSesion } from '../auth/authStorage';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://TU-BACKEND-URL.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
   timeout: 20000,
 });
 

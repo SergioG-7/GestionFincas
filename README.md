@@ -2,16 +2,6 @@
 
 Aplicación web (PWA) para la gestión integral de fincas agrícolas: trazabilidad de parcelas por celda, contabilidad y planificación de abonado, con autenticación cerrada para un único usuario autorizado.
 
-**🔗 Aplicación en producción:** [TU-FRONTEND-URL.vercel.app](https://TU-FRONTEND-URL.vercel.app)
-
-| Servicio | Proveedor | Estado |
-|---|---|---|
-| Frontend | [Vercel](https://TU-FRONTEND-URL.vercel.app) | 🟢 Operativo |
-| Backend / API | [Render](https://TU-BACKEND-URL.onrender.com/api/health) | 🟢 Operativo |
-| Base de datos | MySQL en [Aiven](https://aiven.io) | 🟢 Operativo |
-
-> El backend en Render (plan gratuito) puede tardar unos segundos en "despertar" si ha estado inactivo — la primera petición tras un rato sin uso puede ser lenta.
-
 ## Características principales
 
 - **Gestión de fincas y parcelas**: matriz táctil interactiva por parcela (filas × columnas configurables), con selección múltiple por arrastre (ratón y dedo), auto-scroll cerca de los bordes y cabeceras fijas para parcelas grandes.
