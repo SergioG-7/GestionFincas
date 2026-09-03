@@ -218,8 +218,9 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
     setSelectedCells([]);
   }
 
-  const filas = Array.from({ length: parcela.filas });
   const columnas = Array.from({ length: parcela.columnas });
+  // Fila 1 se muestra abajo: se renderiza en orden descendente sin alterar los indices reales.
+  const indicesFilas = Array.from({ length: parcela.filas }, (_, i) => i).reverse();
   const mostrarModal = modoEdicion && !isDragging && selectedCells.length > 0;
   const asignacionesCeldaUnica =
     selectedCells.length === 1 ? mapa[`${selectedCells[0].fila}-${selectedCells[0].columna}`] || [] : [];
@@ -257,7 +258,7 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
             </div>
           ))}
 
-          {filas.map((_, fila) => (
+          {indicesFilas.map((fila) => (
             <Fragment key={fila}>
               <div className="sticky left-0 z-10 bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
                 {fila + 1}
@@ -272,6 +273,7 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
                   estaSeleccionada(fila, columna)
                 );
                 const tieneObservaciones = celdaAsignaciones.some((a) => a.observaciones?.trim());
+                const noDisponible = celdaAsignaciones.some((a) => a.estado_nombre === 'No Disponible');
 
                 return (
                   <div
@@ -288,6 +290,7 @@ export default function ParcelaGrid({ parcela, asignaciones, estados, estadoFilt
                     } ${className}`}
                     style={{ ...style, touchAction: modoEdicion ? 'none' : 'auto' }}
                   >
+                    {noDisponible && <span className="text-lg leading-none">✕</span>}
                     {asterisco && '*'}
                     {tieneObservaciones && (
                       <span className="absolute top-1 right-1 w-2 h-2 bg-black/60 rounded-full" />

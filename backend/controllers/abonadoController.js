@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { desplazarAnio } = require('../utils/fechas');
 
 async function getAbonado(req, res) {
   const { finca_id, anio } = req.query;
@@ -130,14 +131,6 @@ async function getAniosConDatos(req, res) {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-}
-
-function desplazarAnio(fecha, anioDestino) {
-  if (!fecha) return null;
-  const d = new Date(fecha);
-  const mes = String(d.getMonth() + 1).padStart(2, '0');
-  const dia = String(d.getDate()).padStart(2, '0');
-  return `${anioDestino}-${mes}-${dia}`;
 }
 
 async function copiarPlan(req, res) {

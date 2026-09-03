@@ -5,3 +5,6 @@
 *.user
 .DS_Store
 Thumbs.db
+
+.claude/
+CLAUDE.md

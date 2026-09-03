@@ -185,7 +185,7 @@ export default function PanelPage() {
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <ParcelaStats asignaciones={asignaciones} estados={estados} />
+            <ParcelaStats asignaciones={asignaciones} estados={estados} parcela={parcela} />
 
             <button
               type="button"

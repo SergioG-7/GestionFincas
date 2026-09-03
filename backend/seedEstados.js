@@ -9,6 +9,7 @@ const ESTADOS_POR_DEFECTO = [
   ['Barbecho', '#9CA3AF'],
   ['Plaga / Tratamiento', '#EF4444'],
   ['Abonado', '#F472B6'],
+  ['No Disponible', '#EF4444'],
 ];
 
 async function seed() {
